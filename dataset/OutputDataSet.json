@@ -1,0 +1,19 @@
+{
+	"name": "OutputDataSet",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureBlobStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"folderPath": "output",
+				"container": "testdatafactory"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

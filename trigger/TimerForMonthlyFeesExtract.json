@@ -1,0 +1,24 @@
+{
+	"name": "TimerForMonthlyFeesExtract",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "IMAP Monthly Fees Extract",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Month",
+				"interval": 5,
+				"startTime": "2020-11-23T13:13:00",
+				"timeZone": "India Standard Time"
+			}
+		}
+	}
+}

@@ -1,0 +1,16 @@
+{
+	"name": "JobFlag",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "himacdbserverLinkedService",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "JobFlag"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

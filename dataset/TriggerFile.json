@@ -1,0 +1,23 @@
+{
+	"name": "TriggerFile",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "BlobStorageLinkedService",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "IMAPFeeSolution"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "trigger.trg",
+				"folderPath": "incoming",
+				"container": "imapfeesolution"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

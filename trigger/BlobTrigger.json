@@ -1,0 +1,25 @@
+{
+	"name": "BlobTrigger",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "IMAP Fee Solution",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "BlobEventsTrigger",
+		"typeProperties": {
+			"blobPathBeginsWith": "/imapfeesolution/blobs/incoming/",
+			"blobPathEndsWith": "trigger.trg",
+			"ignoreEmptyBlobs": false,
+			"scope": "/subscriptions/0e8d2934-7afe-475a-8462-6428ccba5694/resourceGroups/myresourcegroup/providers/Microsoft.Storage/storageAccounts/sqlvagzclugwtw6xpq",
+			"events": [
+				"Microsoft.Storage.BlobCreated"
+			]
+		}
+	}
+}

@@ -1,0 +1,20 @@
+{
+	"name": "IMAPFeeSolution",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "himacdbserverLinkedService",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "IMAPFeeSolution"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "IMAPFeeSolution"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
