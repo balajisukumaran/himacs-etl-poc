@@ -1,0 +1,23 @@
+{
+	"name": "EmployeeTriggerFile",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "BlobStorageLinkedService",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "Employee"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "trigger.trg",
+				"folderPath": "incoming",
+				"container": "employeee"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
