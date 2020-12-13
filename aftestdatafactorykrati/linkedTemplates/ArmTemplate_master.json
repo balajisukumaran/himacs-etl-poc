@@ -31,6 +31,14 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'himacdbserverLinkedService'"
 		},
+		"FnEmployeeDetailExtract_functionKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'functionKey' of 'FnEmployeeDetailExtract'"
+		},
+		"FnLoadEmployeeDetail_functionKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'functionKey' of 'FnLoadEmployeeDetail'"
+		},
 		"AzureFunctionLinkedService_properties_typeProperties_functionAppUrl": {
 			"type": "string",
 			"defaultValue": "https://fnimapfeesolutionextract.azurewebsites.net"
@@ -42,6 +50,14 @@
 		"BlobTrigger_properties_typeProperties_scope": {
 			"type": "string",
 			"defaultValue": "/subscriptions/0e8d2934-7afe-475a-8462-6428ccba5694/resourceGroups/myresourcegroup/providers/Microsoft.Storage/storageAccounts/sqlvagzclugwtw6xpq"
+		},
+		"FnEmployeeDetailExtract_properties_typeProperties_functionAppUrl": {
+			"type": "string",
+			"defaultValue": "https://fnemployeedetailsextract.azurewebsites.net"
+		},
+		"FnLoadEmployeeDetail_properties_typeProperties_functionAppUrl": {
+			"type": "string",
+			"defaultValue": "https://fnloademployeedetail.azurewebsites.net"
 		},
 		"containerUri": {
 			"type": "string",
@@ -88,18 +104,50 @@
 					"himacdbserverLinkedService_connectionString": {
 						"value": "[parameters('himacdbserverLinkedService_connectionString')]"
 					},
+					"FnEmployeeDetailExtract_functionKey": {
+						"value": "[parameters('FnEmployeeDetailExtract_functionKey')]"
+					},
+					"FnLoadEmployeeDetail_functionKey": {
+						"value": "[parameters('FnLoadEmployeeDetail_functionKey')]"
+					},
 					"AzureFunctionLinkedService_properties_typeProperties_functionAppUrl": {
 						"value": "[parameters('AzureFunctionLinkedService_properties_typeProperties_functionAppUrl')]"
 					},
 					"FSIMAPFunction_properties_typeProperties_functionAppUrl": {
 						"value": "[parameters('FSIMAPFunction_properties_typeProperties_functionAppUrl')]"
 					},
+					"FnEmployeeDetailExtract_properties_typeProperties_functionAppUrl": {
+						"value": "[parameters('FnEmployeeDetailExtract_properties_typeProperties_functionAppUrl')]"
+					},
+					"FnLoadEmployeeDetail_properties_typeProperties_functionAppUrl": {
+						"value": "[parameters('FnLoadEmployeeDetail_properties_typeProperties_functionAppUrl')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "aftestdatafactorykrati_ArmTemplate_1",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2018-02-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_1.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
 					"BlobTrigger_properties_typeProperties_scope": {
 						"value": "[parameters('BlobTrigger_properties_typeProperties_scope')]"
 					}
 				}
 			},
-			"dependsOn": []
+			"dependsOn": [
+				"[resourceId('Microsoft.Resources/deployments', 'aftestdatafactorykrati_ArmTemplate_0')]"
+			]
 		}
 	]
 }

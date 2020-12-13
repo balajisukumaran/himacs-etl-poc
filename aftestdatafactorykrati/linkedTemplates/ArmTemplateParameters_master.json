@@ -23,6 +23,12 @@
 		"himacdbserverLinkedService_connectionString": {
 			"value": ""
 		},
+		"FnEmployeeDetailExtract_functionKey": {
+			"value": ""
+		},
+		"FnLoadEmployeeDetail_functionKey": {
+			"value": ""
+		},
 		"AzureFunctionLinkedService_properties_typeProperties_functionAppUrl": {
 			"value": "https://fnimapfeesolutionextract.azurewebsites.net"
 		},
@@ -31,6 +37,12 @@
 		},
 		"BlobTrigger_properties_typeProperties_scope": {
 			"value": "/subscriptions/0e8d2934-7afe-475a-8462-6428ccba5694/resourceGroups/myresourcegroup/providers/Microsoft.Storage/storageAccounts/sqlvagzclugwtw6xpq"
+		},
+		"FnEmployeeDetailExtract_properties_typeProperties_functionAppUrl": {
+			"value": "https://fnemployeedetailsextract.azurewebsites.net"
+		},
+		"FnLoadEmployeeDetail_properties_typeProperties_functionAppUrl": {
+			"value": "https://fnloademployeedetail.azurewebsites.net"
 		},
 		"containerUri": {
 			"value": ""

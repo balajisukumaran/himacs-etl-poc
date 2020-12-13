@@ -31,6 +31,14 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'himacdbserverLinkedService'"
 		},
+		"FnEmployeeDetailExtract_functionKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'functionKey' of 'FnEmployeeDetailExtract'"
+		},
+		"FnLoadEmployeeDetail_functionKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'functionKey' of 'FnLoadEmployeeDetail'"
+		},
 		"AzureFunctionLinkedService_properties_typeProperties_functionAppUrl": {
 			"type": "string",
 			"defaultValue": "https://fnimapfeesolutionextract.azurewebsites.net"
@@ -39,9 +47,13 @@
 			"type": "string",
 			"defaultValue": "https://fsimap.azurewebsites.net"
 		},
-		"BlobTrigger_properties_typeProperties_scope": {
+		"FnEmployeeDetailExtract_properties_typeProperties_functionAppUrl": {
 			"type": "string",
-			"defaultValue": "/subscriptions/0e8d2934-7afe-475a-8462-6428ccba5694/resourceGroups/myresourcegroup/providers/Microsoft.Storage/storageAccounts/sqlvagzclugwtw6xpq"
+			"defaultValue": "https://fnemployeedetailsextract.azurewebsites.net"
+		},
+		"FnLoadEmployeeDetail_properties_typeProperties_functionAppUrl": {
+			"type": "string",
+			"defaultValue": "https://fnloademployeedetail.azurewebsites.net"
 		}
 	},
 	"variables": {
@@ -132,6 +144,61 @@
 				"type": "AzureSqlDatabase",
 				"typeProperties": {
 					"connectionString": "[parameters('himacdbserverLinkedService_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/TimerForMonthlyFeesExtract')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Stopped",
+				"pipelines": [],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Month",
+						"interval": 5,
+						"startTime": "2020-11-23T13:13:00",
+						"timeZone": "India Standard Time",
+						"schedule": {}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/FnEmployeeDetailExtract')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureFunction",
+				"typeProperties": {
+					"functionAppUrl": "[parameters('FnEmployeeDetailExtract_properties_typeProperties_functionAppUrl')]",
+					"functionKey": {
+						"type": "SecureString",
+						"value": "[parameters('FnEmployeeDetailExtract_functionKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/FnLoadEmployeeDetail')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureFunction",
+				"typeProperties": {
+					"functionAppUrl": "[parameters('FnLoadEmployeeDetail_properties_typeProperties_functionAppUrl')]",
+					"functionKey": {
+						"type": "SecureString",
+						"value": "[parameters('FnLoadEmployeeDetail_functionKey')]"
+					}
 				}
 			},
 			"dependsOn": []
@@ -382,779 +449,107 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/IMAP Fee Solution')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
+			"name": "[concat(parameters('factoryName'), '/Employee')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
-				"activities": [
-					{
-						"name": "Check if Job Exists",
-						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "AzureSqlSource",
-								"sqlReaderStoredProcedureName": "[[dbo].[checkjobexists]",
-								"storedProcedureParameters": {
-									"id": {
-										"type": "Int32",
-										"value": {
-											"value": "@variables('jobid')",
-											"type": "Expression"
-										}
-									}
-								},
-								"queryTimeout": "02:00:00",
-								"partitionOption": "None"
-							},
-							"dataset": {
-								"referenceName": "JobFlag",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						}
-					},
-					{
-						"name": "If job exists",
-						"type": "IfCondition",
-						"dependsOn": [
-							{
-								"activity": "Check if Job Exists",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							},
-							{
-								"activity": "Get trigger file detail",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							},
-							{
-								"activity": "Get input file detail",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"userProperties": [],
-						"typeProperties": {
-							"expression": {
-								"value": "@and( equals(activity('Check if Job Exists').output.firstRow.flag,1) \n   , and(equals(activity('Get input file detail').output.Exists,true)\n            ,equals(activity('Get trigger file detail').output.Exists,true) \n            ) \n)",
-								"type": "Expression"
-							},
-							"ifFalseActivities": [
-								{
-									"name": "Log Job Failed",
-									"type": "SqlServerStoredProcedure",
-									"dependsOn": [],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"storedProcedureName": "[[dbo].[insertjobhistory]",
-										"storedProcedureParameters": {
-											"job_id": {
-												"value": {
-													"value": "@variables('jobid')",
-													"type": "Expression"
-												},
-												"type": "Int32"
-											},
-											"status": {
-												"value": "Job Failed",
-												"type": "String"
-											}
-										}
-									},
-									"linkedServiceName": {
-										"referenceName": "himacdbserverLinkedService",
-										"type": "LinkedServiceReference"
-									}
-								}
-							],
-							"ifTrueActivities": [
-								{
-									"name": "FSIMAP",
-									"type": "AzureFunctionActivity",
-									"dependsOn": [],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"functionName": "HttpTrigger",
-										"method": "POST",
-										"headers": {},
-										"body": {
-											"value": "{\n    \"container\":\"imapfeesolution\",\n    \"filename\":\"incoming/imapfee.csv\"\n}",
-											"type": "Expression"
-										}
-									},
-									"linkedServiceName": {
-										"referenceName": "FSIMAPFunction",
-										"type": "LinkedServiceReference"
-									}
-								},
-								{
-									"name": "Log JobHistory",
-									"type": "SqlServerStoredProcedure",
-									"dependsOn": [
-										{
-											"activity": "FSIMAP",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"storedProcedureName": "[[dbo].[insertjobhistory]",
-										"storedProcedureParameters": {
-											"job_id": {
-												"value": {
-													"value": "@variables('jobid')",
-													"type": "Expression"
-												},
-												"type": "Int32"
-											},
-											"status": {
-												"value": "Job Completed Successfully",
-												"type": "String"
-											}
-										}
-									},
-									"linkedServiceName": {
-										"referenceName": "himacdbserverLinkedService",
-										"type": "LinkedServiceReference"
-									}
-								},
-								{
-									"name": "Delete Input",
-									"type": "Delete",
-									"dependsOn": [
-										{
-											"activity": "FSIMAP",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"dataset": {
-											"referenceName": "IMAPFeeSolutionFile",
-											"type": "DatasetReference",
-											"parameters": {}
-										},
-										"enableLogging": false,
-										"storeSettings": {
-											"type": "AzureBlobStorageReadSettings",
-											"recursive": true
-										}
-									}
-								},
-								{
-									"name": "delete Trigger",
-									"type": "Delete",
-									"dependsOn": [
-										{
-											"activity": "FSIMAP",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"dataset": {
-											"referenceName": "TriggerFile",
-											"type": "DatasetReference",
-											"parameters": {}
-										},
-										"enableLogging": false,
-										"storeSettings": {
-											"type": "AzureBlobStorageReadSettings",
-											"recursive": true
-										}
-									}
-								},
-								{
-									"name": "Log Failed",
-									"type": "SqlServerStoredProcedure",
-									"dependsOn": [
-										{
-											"activity": "FSIMAP",
-											"dependencyConditions": [
-												"Failed"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"storedProcedureName": "[[dbo].[insertjobhistory]",
-										"storedProcedureParameters": {
-											"job_id": {
-												"value": {
-													"value": "@variables('jobid')",
-													"type": "Expression"
-												},
-												"type": "Int32"
-											},
-											"status": {
-												"value": "Job Failed",
-												"type": "String"
-											}
-										}
-									},
-									"linkedServiceName": {
-										"referenceName": "himacdbserverLinkedService",
-										"type": "LinkedServiceReference"
-									}
-								}
-							]
-						}
-					},
-					{
-						"name": "Get input file detail",
-						"type": "GetMetadata",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataset": {
-								"referenceName": "IMAPFeeSolutionFile",
-								"type": "DatasetReference",
-								"parameters": {}
-							},
-							"fieldList": [
-								"exists"
-							],
-							"storeSettings": {
-								"type": "AzureBlobStorageReadSettings",
-								"recursive": true
-							},
-							"formatSettings": {
-								"type": "DelimitedTextReadSettings"
-							}
-						}
-					},
-					{
-						"name": "Get trigger file detail",
-						"type": "GetMetadata",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataset": {
-								"referenceName": "TriggerFile",
-								"type": "DatasetReference",
-								"parameters": {}
-							},
-							"fieldList": [
-								"exists"
-							],
-							"storeSettings": {
-								"type": "AzureBlobStorageReadSettings",
-								"recursive": true
-							},
-							"formatSettings": {
-								"type": "BinaryReadSettings"
-							}
-						}
-					}
-				],
-				"variables": {
-					"jobid": {
-						"type": "String",
-						"defaultValue": "2"
-					}
+				"linkedServiceName": {
+					"referenceName": "himacdbserverLinkedService",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "Employee"
 				},
 				"annotations": [],
-				"lastPublishTime": "2020-11-23T06:58:44Z"
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/JobFlag')]",
-				"[concat(variables('factoryId'), '/datasets/IMAPFeeSolutionFile')]",
-				"[concat(variables('factoryId'), '/datasets/TriggerFile')]",
-				"[concat(variables('factoryId'), '/linkedServices/himacdbserverLinkedService')]",
-				"[concat(variables('factoryId'), '/linkedServices/FSIMAPFunction')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/IMAP Monthly Fees Extract')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"description": "Extracts the data from MACS Database and creates a csv file",
-				"activities": [
-					{
-						"name": "Check if Job Exists",
-						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "AzureSqlSource",
-								"sqlReaderStoredProcedureName": "[[dbo].[checkjobexists]",
-								"storedProcedureParameters": {
-									"id": {
-										"type": "Int32",
-										"value": {
-											"value": "@variables('JobId')",
-											"type": "Expression"
-										}
-									}
-								},
-								"queryTimeout": "02:00:00",
-								"partitionOption": "None"
-							},
-							"dataset": {
-								"referenceName": "JobFlag",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						}
-					},
-					{
-						"name": "If Job Exists",
-						"type": "IfCondition",
-						"dependsOn": [
-							{
-								"activity": "Check if Job Exists",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"userProperties": [],
-						"typeProperties": {
-							"expression": {
-								"value": "@equals(activity('Check if Job Exists').output.firstRow.flag,1)",
-								"type": "Expression"
-							},
-							"ifFalseActivities": [
-								{
-									"name": "Log Failed",
-									"type": "SqlServerStoredProcedure",
-									"dependsOn": [],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"storedProcedureName": "[[dbo].[insertjobhistory]",
-										"storedProcedureParameters": {
-											"job_id": {
-												"value": {
-													"value": "@variables('JobId')",
-													"type": "Expression"
-												},
-												"type": "Int32"
-											},
-											"status": {
-												"value": "Job Failed",
-												"type": "String"
-											}
-										}
-									},
-									"linkedServiceName": {
-										"referenceName": "himacdbserverLinkedService",
-										"type": "LinkedServiceReference"
-									}
-								}
-							],
-							"ifTrueActivities": [
-								{
-									"name": "Select Top 100 from IMAPFeeSolution",
-									"description": "Selecting directly from table",
-									"type": "Lookup",
-									"dependsOn": [],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"source": {
-											"type": "AzureSqlSource",
-											"sqlReaderQuery": "SELECT TOP 100 * FROM dbo.IMAPFeeSolution",
-											"queryTimeout": "02:00:00",
-											"partitionOption": "None"
-										},
-										"dataset": {
-											"referenceName": "IMAPFeeSolution",
-											"type": "DatasetReference",
-											"parameters": {}
-										},
-										"firstRowOnly": false
-									}
-								},
-								{
-									"name": "IMAP Monthly Fee Extract",
-									"type": "AzureFunctionActivity",
-									"dependsOn": [
-										{
-											"activity": "Select Top 100 from IMAPFeeSolution",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"functionName": "IMAPFeeSolutionFunction",
-										"method": "GET",
-										"headers": {}
-									},
-									"linkedServiceName": {
-										"referenceName": "AzureFunctionLinkedService",
-										"type": "LinkedServiceReference"
-									}
-								},
-								{
-									"name": "Log Job Successful",
-									"type": "SqlServerStoredProcedure",
-									"dependsOn": [
-										{
-											"activity": "IMAP Monthly Fee Extract",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"storedProcedureName": "[[dbo].[insertjobhistory]",
-										"storedProcedureParameters": {
-											"job_id": {
-												"value": {
-													"value": "@variables('JobId')",
-													"type": "Expression"
-												},
-												"type": "Int32"
-											},
-											"status": {
-												"value": "Job Completed Successfully",
-												"type": "String"
-											}
-										}
-									},
-									"linkedServiceName": {
-										"referenceName": "himacdbserverLinkedService",
-										"type": "LinkedServiceReference"
-									}
-								},
-								{
-									"name": "Log Job Fail",
-									"type": "SqlServerStoredProcedure",
-									"dependsOn": [
-										{
-											"activity": "Select Top 100 from IMAPFeeSolution",
-											"dependencyConditions": [
-												"Failed"
-											]
-										},
-										{
-											"activity": "IMAP Monthly Fee Extract",
-											"dependencyConditions": [
-												"Failed"
-											]
-										},
-										{
-											"activity": "Log Job Successful",
-											"dependencyConditions": [
-												"Failed"
-											]
-										},
-										{
-											"activity": "Update Schedule Status Idle",
-											"dependencyConditions": [
-												"Failed"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"storedProcedureName": "[[dbo].[insertjobhistory]",
-										"storedProcedureParameters": {
-											"job_id": {
-												"value": "1",
-												"type": "Int32"
-											},
-											"status": {
-												"value": "Job Failed",
-												"type": "String"
-											}
-										}
-									},
-									"linkedServiceName": {
-										"referenceName": "himacdbserverLinkedService",
-										"type": "LinkedServiceReference"
-									}
-								},
-								{
-									"name": "Update Schedule Status Idle",
-									"type": "SqlServerStoredProcedure",
-									"dependsOn": [
-										{
-											"activity": "Log Job Successful",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"storedProcedureName": "[[dbo].[UpdateRunStatusAndNextRunOnCompletion]",
-										"storedProcedureParameters": {
-											"jobid": {
-												"value": {
-													"value": "@variables('JobId')",
-													"type": "Expression"
-												},
-												"type": "Int32"
-											},
-											"nextRunDate": {
-												"value": {
-													"value": "12/31/9999 12:00:00",
-													"type": "Expression"
-												},
-												"type": "DateTime"
-											},
-											"runStatus": {
-												"value": "Idle",
-												"type": "String"
-											}
-										}
-									},
-									"linkedServiceName": {
-										"referenceName": "himacdbserverLinkedService",
-										"type": "LinkedServiceReference"
-									}
-								},
-								{
-									"name": "Update schedule Status idle with excepiton",
-									"type": "SqlServerStoredProcedure",
-									"dependsOn": [
-										{
-											"activity": "Log Job Fail",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"storedProcedureName": "[[dbo].[UpdateRunStatusAndNextRunOnCompletion]",
-										"storedProcedureParameters": {
-											"jobid": {
-												"value": {
-													"value": "@variables('JobId')",
-													"type": "Expression"
-												},
-												"type": "Int32"
-											},
-											"nextRunDate": {
-												"value": "12/31/9999 12:00:00",
-												"type": "DateTime"
-											},
-											"runStatus": {
-												"value": "Idle with Exception",
-												"type": "String"
-											}
-										}
-									},
-									"linkedServiceName": {
-										"referenceName": "himacdbserverLinkedService",
-										"type": "LinkedServiceReference"
-									}
-								}
-							]
-						}
-					}
-				],
-				"variables": {
-					"JobId": {
-						"type": "String",
-						"defaultValue": "1"
-					}
-				},
-				"annotations": [],
-				"lastPublishTime": "2020-11-20T21:53:41Z"
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/JobFlag')]",
-				"[concat(variables('factoryId'), '/linkedServices/himacdbserverLinkedService')]",
-				"[concat(variables('factoryId'), '/datasets/IMAPFeeSolution')]",
-				"[concat(variables('factoryId'), '/linkedServices/AzureFunctionLinkedService')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/BlobTrigger')]",
-			"type": "Microsoft.DataFactory/factories/triggers",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"runtimeState": "Started",
-				"pipelines": [
-					{
-						"pipelineReference": {
-							"referenceName": "IMAP Fee Solution",
-							"type": "PipelineReference"
-						},
-						"parameters": {}
-					}
-				],
-				"type": "BlobEventsTrigger",
+				"type": "AzureSqlTable",
+				"schema": [],
 				"typeProperties": {
-					"blobPathBeginsWith": "/imapfeesolution/blobs/incoming/",
-					"blobPathEndsWith": "trigger.trg",
-					"ignoreEmptyBlobs": false,
-					"scope": "[parameters('BlobTrigger_properties_typeProperties_scope')]",
-					"events": [
-						"Microsoft.Storage.BlobCreated"
-					]
+					"schema": "dbo",
+					"table": "Employee"
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/pipelines/IMAP Fee Solution')]"
+				"[concat(variables('factoryId'), '/linkedServices/himacdbserverLinkedService')]"
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/TimerForMonthlyFeesExtract')]",
-			"type": "Microsoft.DataFactory/factories/triggers",
+			"name": "[concat(parameters('factoryName'), '/EmployeeFile')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
+				"linkedServiceName": {
+					"referenceName": "BlobStorageLinkedService",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "Employee"
+				},
 				"annotations": [],
-				"runtimeState": "Started",
-				"pipelines": [
-					{
-						"pipelineReference": {
-							"referenceName": "IMAP Monthly Fees Extract",
-							"type": "PipelineReference"
-						},
-						"parameters": {}
-					}
-				],
-				"type": "ScheduleTrigger",
+				"type": "DelimitedText",
 				"typeProperties": {
-					"recurrence": {
-						"frequency": "Month",
-						"interval": 5,
-						"startTime": "2020-11-23T13:13:00",
-						"timeZone": "India Standard Time"
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "employee.csv",
+						"folderPath": "incoming",
+						"container": "employee"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "id",
+						"type": "String"
+					},
+					{
+						"name": "feegroupid",
+						"type": "String"
+					},
+					{
+						"name": "imbasefee",
+						"type": "String"
+					},
+					{
+						"name": "premiumfee",
+						"type": "String"
+					},
+					{
+						"name": "custodyfee",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/BlobStorageLinkedService')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/EmployeeTriggerFile')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "BlobStorageLinkedService",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "Employee"
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "trigger.trg",
+						"folderPath": "incoming",
+						"container": "employee"
 					}
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/pipelines/IMAP Monthly Fees Extract')]"
+				"[concat(variables('factoryId'), '/linkedServices/BlobStorageLinkedService')]"
 			]
 		}
 	]
