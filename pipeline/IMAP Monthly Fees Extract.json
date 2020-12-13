@@ -233,6 +233,97 @@
 								"referenceName": "himacdbserverLinkedService",
 								"type": "LinkedServiceReference"
 							}
+						},
+						{
+							"name": "Update Schedule Status Idle",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Log Job Successful",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[dbo].[UpdateRunStatusAndNextRunOnCompletion]",
+								"storedProcedureParameters": {
+									"jobid": {
+										"value": {
+											"value": "@variables('JobId')",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"nextRunDate": {
+										"value": {
+											"value": "'12/31/9999 12:00:00'",
+											"type": "Expression"
+										},
+										"type": "DateTime"
+									},
+									"runStatus": {
+										"value": "'Idle'",
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "himacdbserverLinkedService",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Update schedule Status idle with excepiton",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Log Job Fail",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[dbo].[UpdateRunStatusAndNextRunOnCompletion]",
+								"storedProcedureParameters": {
+									"jobid": {
+										"value": {
+											"value": "@variables('JobId')",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"nextRunDate": {
+										"value": "'12/31/9999 12:00:00'",
+										"type": "DateTime"
+									},
+									"runStatus": {
+										"value": "'Idle with Exception'",
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "himacdbserverLinkedService",
+								"type": "LinkedServiceReference"
+							}
 						}
 					]
 				}
