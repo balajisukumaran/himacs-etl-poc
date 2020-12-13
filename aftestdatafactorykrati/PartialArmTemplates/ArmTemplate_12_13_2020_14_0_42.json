@@ -1,0 +1,366 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "aftestdatafactorykrati"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/IMAP Monthly Fees Extract')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Extracts the data from MACS Database and creates a csv file",
+				"activities": [
+					{
+						"name": "Check if Job Exists",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderStoredProcedureName": "[[dbo].[checkjobexists]",
+								"storedProcedureParameters": {
+									"id": {
+										"type": "Int32",
+										"value": {
+											"value": "@variables('JobId')",
+											"type": "Expression"
+										}
+									}
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "JobFlag",
+								"type": "DatasetReference"
+							}
+						}
+					},
+					{
+						"name": "If Job Exists",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "Check if Job Exists",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@equals(activity('Check if Job Exists').output.firstRow.flag,1)",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "Log Failed",
+									"type": "SqlServerStoredProcedure",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"storedProcedureName": "[[dbo].[insertjobhistory]",
+										"storedProcedureParameters": {
+											"job_id": {
+												"value": {
+													"value": "@variables('JobId')",
+													"type": "Expression"
+												},
+												"type": "Int32"
+											},
+											"status": {
+												"value": "Job Failed",
+												"type": "String"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "himacdbserverLinkedService",
+										"type": "LinkedServiceReference"
+									}
+								}
+							],
+							"ifTrueActivities": [
+								{
+									"name": "Select Top 100 from IMAPFeeSolution",
+									"description": "Selecting directly from table",
+									"type": "Lookup",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"sqlReaderQuery": "SELECT TOP 100 * FROM dbo.IMAPFeeSolution",
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"dataset": {
+											"referenceName": "IMAPFeeSolution",
+											"type": "DatasetReference"
+										},
+										"firstRowOnly": false
+									}
+								},
+								{
+									"name": "IMAP Monthly Fee Extract",
+									"type": "AzureFunctionActivity",
+									"dependsOn": [
+										{
+											"activity": "Select Top 100 from IMAPFeeSolution",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"functionName": "IMAPFeeSolutionFunction",
+										"method": "GET"
+									},
+									"linkedServiceName": {
+										"referenceName": "AzureFunctionLinkedService",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "Log Job Successful",
+									"type": "SqlServerStoredProcedure",
+									"dependsOn": [
+										{
+											"activity": "IMAP Monthly Fee Extract",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"storedProcedureName": "[[dbo].[insertjobhistory]",
+										"storedProcedureParameters": {
+											"job_id": {
+												"value": {
+													"value": "@variables('JobId')",
+													"type": "Expression"
+												},
+												"type": "Int32"
+											},
+											"status": {
+												"value": "Job Completed Successfully",
+												"type": "String"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "himacdbserverLinkedService",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "Log Job Fail",
+									"type": "SqlServerStoredProcedure",
+									"dependsOn": [
+										{
+											"activity": "Select Top 100 from IMAPFeeSolution",
+											"dependencyConditions": [
+												"Failed"
+											]
+										},
+										{
+											"activity": "IMAP Monthly Fee Extract",
+											"dependencyConditions": [
+												"Failed"
+											]
+										},
+										{
+											"activity": "Log Job Successful",
+											"dependencyConditions": [
+												"Failed"
+											]
+										},
+										{
+											"activity": "Update Schedule Status Idle",
+											"dependencyConditions": [
+												"Failed"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"storedProcedureName": "[[dbo].[insertjobhistory]",
+										"storedProcedureParameters": {
+											"job_id": {
+												"value": "1",
+												"type": "Int32"
+											},
+											"status": {
+												"value": "Job Failed",
+												"type": "String"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "himacdbserverLinkedService",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "Update Schedule Status Idle",
+									"type": "SqlServerStoredProcedure",
+									"dependsOn": [
+										{
+											"activity": "Log Job Successful",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"storedProcedureName": "[[dbo].[UpdateRunStatusAndNextRunOnCompletion]",
+										"storedProcedureParameters": {
+											"jobid": {
+												"value": {
+													"value": "@variables('JobId')",
+													"type": "Expression"
+												},
+												"type": "Int32"
+											},
+											"nextRunDate": {
+												"value": {
+													"value": "12/31/9999 12:00:00",
+													"type": "Expression"
+												},
+												"type": "DateTime"
+											},
+											"runStatus": {
+												"value": "Idle",
+												"type": "String"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "himacdbserverLinkedService",
+										"type": "LinkedServiceReference"
+									}
+								},
+								{
+									"name": "Update schedule Status idle with excepiton",
+									"type": "SqlServerStoredProcedure",
+									"dependsOn": [
+										{
+											"activity": "Log Job Fail",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"storedProcedureName": "[[dbo].[UpdateRunStatusAndNextRunOnCompletion]",
+										"storedProcedureParameters": {
+											"jobid": {
+												"value": {
+													"value": "@variables('JobId')",
+													"type": "Expression"
+												},
+												"type": "Int32"
+											},
+											"nextRunDate": {
+												"value": "12/31/9999 12:00:00",
+												"type": "DateTime"
+											},
+											"runStatus": {
+												"value": "Idle with Exception",
+												"type": "String"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "himacdbserverLinkedService",
+										"type": "LinkedServiceReference"
+									}
+								}
+							]
+						}
+					}
+				],
+				"variables": {
+					"JobId": {
+						"type": "String",
+						"defaultValue": "1"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2020-11-20T21:53:41Z"
+			},
+			"dependsOn": []
+		}
+	]
+}

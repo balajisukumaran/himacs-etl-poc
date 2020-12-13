@@ -618,6 +618,12 @@
 											"dependencyConditions": [
 												"Failed"
 											]
+										},
+										{
+											"activity": "Update Schedule Status Idle",
+											"dependencyConditions": [
+												"Failed"
+											]
 										}
 									],
 									"policy": {
@@ -677,13 +683,13 @@
 											},
 											"nextRunDate": {
 												"value": {
-													"value": "'12/31/9999 12:00:00'",
+													"value": "12/31/9999 12:00:00",
 													"type": "Expression"
 												},
 												"type": "DateTime"
 											},
 											"runStatus": {
-												"value": "'Idle'",
+												"value": "Idle",
 												"type": "String"
 											}
 										}
@@ -723,11 +729,11 @@
 												"type": "Int32"
 											},
 											"nextRunDate": {
-												"value": "'12/31/9999 12:00:00'",
+												"value": "12/31/9999 12:00:00",
 												"type": "DateTime"
 											},
 											"runStatus": {
-												"value": "'Idle with Exception'",
+												"value": "Idle with Exception",
 												"type": "String"
 											}
 										}
