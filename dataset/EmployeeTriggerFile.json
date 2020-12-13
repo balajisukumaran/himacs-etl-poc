@@ -15,7 +15,7 @@
 				"type": "AzureBlobStorageLocation",
 				"fileName": "trigger.trg",
 				"folderPath": "incoming",
-				"container": "employeee"
+				"container": "employee"
 			}
 		}
 	},
