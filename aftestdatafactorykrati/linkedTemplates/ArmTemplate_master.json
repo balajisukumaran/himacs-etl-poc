@@ -1,0 +1,105 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "aftestdatafactorykrati"
+		},
+		"AzureBlobStorage1_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'AzureBlobStorage1'"
+		},
+		"AzureFunctionLinkedService_functionKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'functionKey' of 'AzureFunctionLinkedService'"
+		},
+		"AzureSqlDatabaseLinkedService_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'AzureSqlDatabaseLinkedService'"
+		},
+		"BlobStorageLinkedService_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'BlobStorageLinkedService'"
+		},
+		"FSIMAPFunction_functionKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'functionKey' of 'FSIMAPFunction'"
+		},
+		"himacdbserverLinkedService_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'himacdbserverLinkedService'"
+		},
+		"AzureFunctionLinkedService_properties_typeProperties_functionAppUrl": {
+			"type": "string",
+			"defaultValue": "https://fnimapfeesolutionextract.azurewebsites.net"
+		},
+		"FSIMAPFunction_properties_typeProperties_functionAppUrl": {
+			"type": "string",
+			"defaultValue": "https://fsimap.azurewebsites.net"
+		},
+		"BlobTrigger_properties_typeProperties_scope": {
+			"type": "string",
+			"defaultValue": "/subscriptions/0e8d2934-7afe-475a-8462-6428ccba5694/resourceGroups/myresourcegroup/providers/Microsoft.Storage/storageAccounts/sqlvagzclugwtw6xpq"
+		},
+		"containerUri": {
+			"type": "string",
+			"metadata": "URI to storage account containing linked ARM templates"
+		},
+		"containerSasToken": {
+			"type": "string",
+			"metadata": "Sas token to storage account containing linked ARM templates"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "aftestdatafactorykrati_ArmTemplate_0",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2018-02-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_0.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"AzureBlobStorage1_connectionString": {
+						"value": "[parameters('AzureBlobStorage1_connectionString')]"
+					},
+					"AzureFunctionLinkedService_functionKey": {
+						"value": "[parameters('AzureFunctionLinkedService_functionKey')]"
+					},
+					"AzureSqlDatabaseLinkedService_connectionString": {
+						"value": "[parameters('AzureSqlDatabaseLinkedService_connectionString')]"
+					},
+					"BlobStorageLinkedService_connectionString": {
+						"value": "[parameters('BlobStorageLinkedService_connectionString')]"
+					},
+					"FSIMAPFunction_functionKey": {
+						"value": "[parameters('FSIMAPFunction_functionKey')]"
+					},
+					"himacdbserverLinkedService_connectionString": {
+						"value": "[parameters('himacdbserverLinkedService_connectionString')]"
+					},
+					"AzureFunctionLinkedService_properties_typeProperties_functionAppUrl": {
+						"value": "[parameters('AzureFunctionLinkedService_properties_typeProperties_functionAppUrl')]"
+					},
+					"FSIMAPFunction_properties_typeProperties_functionAppUrl": {
+						"value": "[parameters('FSIMAPFunction_properties_typeProperties_functionAppUrl')]"
+					},
+					"BlobTrigger_properties_typeProperties_scope": {
+						"value": "[parameters('BlobTrigger_properties_typeProperties_scope')]"
+					}
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}

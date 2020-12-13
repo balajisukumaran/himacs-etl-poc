@@ -1,0 +1,42 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "aftestdatafactorykrati"
+		},
+		"AzureBlobStorage1_connectionString": {
+			"value": ""
+		},
+		"AzureFunctionLinkedService_functionKey": {
+			"value": ""
+		},
+		"AzureSqlDatabaseLinkedService_connectionString": {
+			"value": ""
+		},
+		"BlobStorageLinkedService_connectionString": {
+			"value": ""
+		},
+		"FSIMAPFunction_functionKey": {
+			"value": ""
+		},
+		"himacdbserverLinkedService_connectionString": {
+			"value": ""
+		},
+		"AzureFunctionLinkedService_properties_typeProperties_functionAppUrl": {
+			"value": "https://fnimapfeesolutionextract.azurewebsites.net"
+		},
+		"FSIMAPFunction_properties_typeProperties_functionAppUrl": {
+			"value": "https://fsimap.azurewebsites.net"
+		},
+		"BlobTrigger_properties_typeProperties_scope": {
+			"value": "/subscriptions/0e8d2934-7afe-475a-8462-6428ccba5694/resourceGroups/myresourcegroup/providers/Microsoft.Storage/storageAccounts/sqlvagzclugwtw6xpq"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}
