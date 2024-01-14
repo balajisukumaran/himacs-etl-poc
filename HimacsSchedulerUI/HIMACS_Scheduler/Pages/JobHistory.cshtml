@@ -1,0 +1,14 @@
+﻿@page
+@model HIMACS_Scheduler.Pages.JobHistoryModel
+@{
+}
+
+    <div class="text-center">
+        <h1 class="display-4">Job History</h1>
+    </div>
+    <div>
+        <label>Job Name:</label>
+        <select name="jobId" asp-items=@Model.Options></select>
+        <br />
+        <br />
+    </div>
